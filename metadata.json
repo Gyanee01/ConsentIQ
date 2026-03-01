@@ -1,0 +1,5 @@
+{
+  "name": "ConsentIQ",
+  "description": "A Data Nutrition Label generator for AI apps used by students. Scans privacy policies and identifies risks using NLP.",
+  "requestFramePermissions": []
+}
