@@ -46,7 +46,7 @@ export default function App() {
   };
 
   const deleteHistoryItem = (e: React.MouseEvent, urlToDelete: string) => {
-    e.stopPropagation(); // Prevent triggering the scan when clicking delete
+    e.stopPropagation();
     const newHistory = history.filter(h => h.url !== urlToDelete);
     saveHistory(newHistory);
   };
@@ -256,12 +256,12 @@ export default function App() {
                 <div className="overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                   {history.length > 0 ? (
                     history.map((item, i) => (
-                      <div key={i} className="group relative">
+                      <div key={i} className="group flex items-center gap-3">
                         <button 
                           onClick={() => { setUrl(item.url); handleScan(null as any, item.url); }}
-                          className="w-full flex items-center justify-between p-5 bg-slate-800/40 border border-slate-700/50 rounded-2xl hover:border-indigo-500/50 hover:bg-slate-800/80 transition-all text-left"
+                          className="flex-1 flex items-center justify-between p-5 bg-slate-800/40 border border-slate-700/50 rounded-2xl hover:border-indigo-500/50 hover:bg-slate-800/80 transition-all text-left"
                         >
-                          <div className="flex items-center gap-4 truncate pr-8">
+                          <div className="flex items-center gap-4 truncate">
                             <div className={cn("w-2.5 h-2.5 rounded-full shadow-lg shrink-0", getScoreColor(item.score).replace('text-', 'bg-'))} />
                             <div className="truncate">
                                <div className="text-sm font-bold text-slate-200 truncate font-mono">{new URL(item.url).hostname}</div>
@@ -278,7 +278,7 @@ export default function App() {
                         </button>
                         <button 
                           onClick={(e) => deleteHistoryItem(e, item.url)}
-                          className="absolute right-14 top-1/2 -translate-y-1/2 p-2 bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/20"
+                          className="p-3 bg-rose-500/10 text-rose-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/20 border border-rose-500/20"
                           title="Delete Record"
                         >
                           <Trash className="w-4 h-4" />
@@ -324,7 +324,7 @@ export default function App() {
                       className="w-full pl-14 pr-36 py-5 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all text-white placeholder:text-slate-600"
                       required
                     />
-                    <button type="submit" className="absolute right-2.5 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 text-xs uppercase tracking-widest">
+                    <button type="submit" className="absolute right-2.5 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 text-xs uppercase tracking-widest font-black">
                       Analyze
                     </button>
                   </div>
@@ -345,22 +345,22 @@ export default function App() {
                    <button onClick={() => setFilterType('all')} className={cn("bg-slate-900/50 backdrop-blur-sm border p-6 rounded-[2rem] text-center transition-all hover:bg-slate-800/50", filterType === 'all' ? 'border-indigo-500 ring-4 ring-indigo-500/10 scale-105 shadow-xl' : 'border-slate-800/50')}>
                       <div className="flex justify-center mb-3"><FileText className="w-5 h-5 text-indigo-400" /></div>
                       <div className="text-2xl font-black text-white">{stats.total}</div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Apps Analyzed</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 font-mono">Apps Analyzed</div>
                    </button>
                    <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800/50 p-6 rounded-[2rem] text-center">
                       <div className="flex justify-center mb-3"><Shield className="w-5 h-5 text-emerald-400" /></div>
                       <div className="text-2xl font-black text-emerald-400">{stats.avg}%</div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Avg Safety</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 font-mono">Avg Safety</div>
                    </div>
                    <button onClick={() => setFilterType('low')} className={cn("bg-slate-900/50 backdrop-blur-sm border p-6 rounded-[2rem] text-center transition-all hover:bg-slate-800/50", filterType === 'low' ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-105 shadow-xl' : 'border-slate-800/50')}>
                       <div className="flex justify-center mb-3"><Target className="w-5 h-5 text-purple-400" /></div>
                       <div className="text-2xl font-black text-white">{stats.lowRisk}</div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Safe Apps</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 font-mono">Safe Apps</div>
                    </button>
                    <button onClick={() => setFilterType('high')} className={cn("bg-slate-900/50 backdrop-blur-sm border p-6 rounded-[2rem] text-center transition-all hover:bg-slate-800/50 group", filterType === 'high' ? 'border-rose-500 ring-4 ring-rose-500/10 scale-105 shadow-xl' : 'border-slate-800/50')}>
                       <div className="flex justify-center mb-3"><AlertTriangle className="w-5 h-5 text-rose-400 group-hover:animate-pulse" /></div>
                       <div className="text-2xl font-black text-rose-400">{stats.highRisk}</div>
-                      <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mt-1">High Risks</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 font-mono">High Risks</div>
                    </button>
                 </div>
               )}
@@ -385,11 +385,11 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredHistory.length > 0 ? (
                       filteredHistory.map((item: any, i: number) => (
-                        <div key={i} className="group relative">
+                        <div key={i} className="group flex items-center gap-3">
                           <button onClick={() => { setUrl(item.url); handleScan(null as any, item.url); }}
-                            className="w-full flex items-center justify-between p-6 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-[2rem] hover:border-indigo-500/50 hover:bg-slate-800/60 transition-all text-left"
+                            className="flex-1 flex items-center justify-between p-6 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-[2rem] hover:border-indigo-500/50 hover:bg-slate-800/60 transition-all text-left"
                           >
-                            <div className="flex items-center gap-4 truncate pr-8">
+                            <div className="flex items-center gap-4 truncate">
                               <div className={cn("w-3 h-3 rounded-full shadow-lg shrink-0", getScoreColor(item.score).replace('text-', 'bg-'))} />
                               <div className="truncate">
                                  <div className="text-sm font-bold text-slate-200 truncate font-mono">{new URL(item.url).hostname}</div>
@@ -403,17 +403,17 @@ export default function App() {
                           </button>
                           <button 
                             onClick={(e) => deleteHistoryItem(e, item.url)}
-                            className="absolute right-14 top-1/2 -translate-y-1/2 p-2 bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/20"
+                            className="p-4 bg-rose-500/10 text-rose-500 rounded-[1.5rem] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/20 border border-rose-500/20"
                             title="Delete Record"
                           >
-                            <Trash className="w-4 h-4" />
+                            <Trash className="w-5 h-5" />
                           </button>
                         </div>
                       ))
                     ) : (
                       <div className="col-span-full py-16 text-center bg-slate-900/20 rounded-[2rem] border border-dashed border-slate-800">
                          <Info className="w-10 h-10 text-slate-800 mx-auto mb-4" />
-                         <p className="text-slate-600 font-black text-xs uppercase tracking-widest">No matching intelligence found.</p>
+                         <p className="text-slate-600 font-black text-xs uppercase tracking-widest font-mono">No matching intelligence found.</p>
                       </div>
                     )}
                   </div>
