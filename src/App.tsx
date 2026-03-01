@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Shield, Search, AlertTriangle, CheckCircle, Info, Activity, FileText, Lock, Eye, Trash2, Github, X, Home, BarChart3, Zap, Target, History, Clock, FilterX } from 'lucide-react';
+import { Shield, Search, AlertTriangle, CheckCircle, Info, Activity, FileText, Lock, Eye, Trash2, Github, X, Home, BarChart3, Zap, Target, History, Clock, FilterX, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -40,6 +40,24 @@ export default function App() {
     return history;
   }, [history, filterType]);
 
+  const saveHistory = (newHistory: any[]) => {
+    setHistory(newHistory);
+    localStorage.setItem('consent-iq-history', JSON.stringify(newHistory));
+  };
+
+  const deleteHistoryItem = (e: React.MouseEvent, urlToDelete: string) => {
+    e.stopPropagation(); // Prevent triggering the scan when clicking delete
+    const newHistory = history.filter(h => h.url !== urlToDelete);
+    saveHistory(newHistory);
+  };
+
+  const clearAllHistory = () => {
+    if (window.confirm("Are you sure you want to wipe all intelligence reports?")) {
+      saveHistory([]);
+      setFilterType('all');
+    }
+  };
+
   const handleScan = async (e: React.FormEvent, customUrl?: string) => {
     if (e) e.preventDefault();
     const targetUrl = customUrl || url;
@@ -68,9 +86,8 @@ export default function App() {
       const newHistory = [
         { url: data.url, score: data.overallScore, date: new Date().toISOString() },
         ...history.filter(h => h.url !== data.url)
-      ].slice(0, 20); // Store more for better filtering
-      setHistory(newHistory);
-      localStorage.setItem('consent-iq-history', JSON.stringify(newHistory));
+      ].slice(0, 20);
+      saveHistory(newHistory);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -222,32 +239,51 @@ export default function App() {
                       <History className="w-6 h-6 text-indigo-400" />
                       <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Scan History</h2>
                    </div>
-                   <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                   <div className="flex items-center gap-2">
+                      {history.length > 0 && (
+                        <button 
+                          onClick={clearAllHistory}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg border border-rose-500/20 transition-all text-[10px] font-black uppercase tracking-wider"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Clear All
+                        </button>
+                      )}
+                      <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
+                   </div>
                 </div>
                 
                 <div className="overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                   {history.length > 0 ? (
                     history.map((item, i) => (
-                      <button 
-                        key={i} 
-                        onClick={() => { setUrl(item.url); handleScan(null as any, item.url); }}
-                        className="w-full flex items-center justify-between p-5 bg-slate-800/40 border border-slate-700/50 rounded-2xl hover:border-indigo-500/50 hover:bg-slate-800/80 transition-all group"
-                      >
-                        <div className="flex items-center gap-4 text-left truncate">
-                          <div className={cn("w-2.5 h-2.5 rounded-full shadow-lg shrink-0", getScoreColor(item.score).replace('text-', 'bg-'))} />
-                          <div className="truncate">
-                             <div className="text-sm font-bold text-slate-200 truncate font-mono">{new URL(item.url).hostname}</div>
-                             <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-1">
-                                <Clock className="w-3 h-3" />
-                                {new Date(item.date).toLocaleString()}
-                             </div>
+                      <div key={i} className="group relative">
+                        <button 
+                          onClick={() => { setUrl(item.url); handleScan(null as any, item.url); }}
+                          className="w-full flex items-center justify-between p-5 bg-slate-800/40 border border-slate-700/50 rounded-2xl hover:border-indigo-500/50 hover:bg-slate-800/80 transition-all text-left"
+                        >
+                          <div className="flex items-center gap-4 truncate pr-8">
+                            <div className={cn("w-2.5 h-2.5 rounded-full shadow-lg shrink-0", getScoreColor(item.score).replace('text-', 'bg-'))} />
+                            <div className="truncate">
+                               <div className="text-sm font-bold text-slate-200 truncate font-mono">{new URL(item.url).hostname}</div>
+                               <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-1">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(item.date).toLocaleString()}
+                               </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4 ml-4">
-                          <span className={cn("text-lg font-black", getScoreColor(item.score))}>{item.score}</span>
-                          <Zap className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
-                        </div>
-                      </button>
+                          <div className="flex items-center gap-4 ml-4 shrink-0">
+                            <span className={cn("text-lg font-black", getScoreColor(item.score))}>{item.score}</span>
+                            <Zap className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                          </div>
+                        </button>
+                        <button 
+                          onClick={(e) => deleteHistoryItem(e, item.url)}
+                          className="absolute right-14 top-1/2 -translate-y-1/2 p-2 bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/20"
+                          title="Delete Record"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
                     ))
                   ) : (
                     <div className="py-12 text-center">
@@ -288,7 +324,7 @@ export default function App() {
                       className="w-full pl-14 pr-36 py-5 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all text-white placeholder:text-slate-600"
                       required
                     />
-                    <button type="submit" className="absolute right-2.5 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 text-xs uppercase tracking-widest">
+                    <button type="submit" className="absolute right-2.5 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 text-xs uppercase tracking-widest">
                       Analyze
                     </button>
                   </div>
@@ -349,21 +385,30 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredHistory.length > 0 ? (
                       filteredHistory.map((item: any, i: number) => (
-                        <button key={i} onClick={() => { setUrl(item.url); handleScan(null as any, item.url); }}
-                          className="flex items-center justify-between p-6 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-[2rem] hover:border-indigo-500/50 hover:bg-slate-800/60 transition-all group text-left"
-                        >
-                          <div className="flex items-center gap-4 truncate">
-                            <div className={cn("w-3 h-3 rounded-full shadow-lg shrink-0", getScoreColor(item.score).replace('text-', 'bg-'))} />
-                            <div className="truncate">
-                               <div className="text-sm font-bold text-slate-200 truncate font-mono">{new URL(item.url).hostname}</div>
-                               <div className="text-[10px] text-slate-600 font-mono mt-0.5">{new Date(item.date).toLocaleDateString()}</div>
+                        <div key={i} className="group relative">
+                          <button onClick={() => { setUrl(item.url); handleScan(null as any, item.url); }}
+                            className="w-full flex items-center justify-between p-6 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-[2rem] hover:border-indigo-500/50 hover:bg-slate-800/60 transition-all text-left"
+                          >
+                            <div className="flex items-center gap-4 truncate pr-8">
+                              <div className={cn("w-3 h-3 rounded-full shadow-lg shrink-0", getScoreColor(item.score).replace('text-', 'bg-'))} />
+                              <div className="truncate">
+                                 <div className="text-sm font-bold text-slate-200 truncate font-mono">{new URL(item.url).hostname}</div>
+                                 <div className="text-[10px] text-slate-600 font-mono mt-0.5">{new Date(item.date).toLocaleDateString()}</div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-6 ml-4 text-right">
-                            <span className={cn("text-xl font-black tabular-nums", getScoreColor(item.score))}>{item.score}</span>
-                            <Zap className="w-4 h-4 text-slate-700 group-hover:text-indigo-400 transition-colors" />
-                          </div>
-                        </button>
+                            <div className="flex items-center gap-6 ml-4 text-right shrink-0">
+                              <span className={cn("text-xl font-black tabular-nums", getScoreColor(item.score))}>{item.score}</span>
+                              <Zap className="w-4 h-4 text-slate-700 group-hover:text-indigo-400 transition-colors" />
+                            </div>
+                          </button>
+                          <button 
+                            onClick={(e) => deleteHistoryItem(e, item.url)}
+                            className="absolute right-14 top-1/2 -translate-y-1/2 p-2 bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/20"
+                            title="Delete Record"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
                       ))
                     ) : (
                       <div className="col-span-full py-16 text-center bg-slate-900/20 rounded-[2rem] border border-dashed border-slate-800">
@@ -422,7 +467,7 @@ export default function App() {
                 <div className="bg-black border border-slate-800 rounded-[3rem] p-8 shadow-2xl">
                   <div className="flex items-center gap-3 mb-6">
                     <Zap className="w-5 h-5 text-indigo-400" />
-                    <h3 className="font-bold text-white text-lg uppercase tracking-tight">Stealth Extract</h3>
+                    <h3 className="font-bold text-white text-lg uppercase tracking-tight font-sans">Stealth Extract</h3>
                   </div>
                   <p className="text-slate-400 text-sm leading-relaxed font-mono bg-slate-900/50 p-6 rounded-[2rem] border border-slate-800/50 max-h-64 overflow-y-auto">
                     "{result.textPreview}"
@@ -433,15 +478,26 @@ export default function App() {
               {/* Breakdown Column */}
               <div className="lg:col-span-8">
                 <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden">
-                  <div className="p-10 border-b border-slate-800/50 flex items-center justify-between bg-slate-900/80">
+                  <div className="p-10 border-b border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900/80 gap-6">
                     <div>
                       <h2 className="text-3xl font-black text-white tracking-tight uppercase font-sans">Nutrition Label</h2>
                       <p className="text-slate-500 mt-2 font-bold text-sm tracking-wide">Automated Intelligence Report</p>
                     </div>
-                    <div className="hidden sm:block text-right">
-                      <div className="text-[10px] font-black font-mono text-slate-600 tracking-widest uppercase space-y-1">
-                        <div>ENGINE: STEALTH_PLAYWRIGHT</div>
-                        <div>HOST: AMD_ROCM_LOCAL</div>
+                    <div className="flex items-center gap-6">
+                      <a 
+                        href={result.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl border border-slate-700 transition-all text-xs font-black uppercase tracking-widest group"
+                      >
+                        Visit Source
+                        <Zap className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-125 transition-transform" />
+                      </a>
+                      <div className="hidden md:block text-right">
+                        <div className="text-[10px] font-black font-mono text-slate-600 tracking-widest uppercase space-y-1">
+                          <div>ENGINE: STEALTH_PLAYWRIGHT</div>
+                          <div>HOST: AMD_ROCM_LOCAL</div>
+                        </div>
                       </div>
                     </div>
                   </div>

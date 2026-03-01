@@ -5,13 +5,14 @@ import torch
 import uvicorn
 import asyncio
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth
+import playwright_stealth
 from bs4 import BeautifulSoup
 import html2text
 import random
 import io
 import requests
 from pypdf import PdfReader
+from fake_useragent import UserAgent
 
 app = FastAPI(title="ConsentIQ Heavy-Duty AI Brain")
 
@@ -25,7 +26,9 @@ print(f"Loading Brain Model: {MODEL_NAME}...")
 classifier = pipeline("zero-shot-classification", model=MODEL_NAME, device=device)
 print("Brain loaded and listening on port 8000!")
 
-# Common Browser Headers to bypass corporate blocks
+ua = UserAgent()
+
+# Common Browser Headers
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,application/pdf,*/*;q=0.8",
@@ -38,11 +41,9 @@ class PolicyRequest(BaseModel):
 
 async def extract_pdf_text(url: str):
     try:
-        print(f"Brain: Downloading PDF via Request: {url}")
-        # Use headers to avoid 403 on corporate sites
+        print(f"Brain: Downloading PDF: {url}")
         response = requests.get(url, headers=BROWSER_HEADERS, timeout=30)
         response.raise_for_status()
-        
         with io.BytesIO(response.content) as f:
             reader = PdfReader(f)
             text = ""
@@ -50,28 +51,33 @@ async def extract_pdf_text(url: str):
                 text += page.extract_text() + "\n"
             return text
     except Exception as e:
-        print(f"PDF Extraction failed: {str(e)}")
-        raise Exception(f"Failed to read PDF file: {str(e)}")
+        print(f"PDF Error: {str(e)}")
+        raise Exception(f"PDF Parse Error: {str(e)}")
 
 async def run_scrape(url: str, attempt: int = 1):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=['--disable-dev-shm-usage', '--no-sandbox'])
         
         try:
+            # Use random user agent for each attempt
+            current_ua = ua.random
             context = await browser.new_context(
-                user_agent=BROWSER_HEADERS["User-Agent"],
+                user_agent=current_ua,
                 viewport={'width': 1280, 'height': 800}
             )
             
             page = await context.new_page()
-            await stealth(page)
             
-            print(f"Brain: Attempt {attempt} - Scraping {url}...")
-            # Navigate
-            await page.goto(url, wait_until="domcontentloaded", timeout=90000)
+            # FIX: Use playwright_stealth.stealth(page) - explicitly call the function
+            # And removed 'await' because it is a synchronous injection
+            playwright_stealth.stealth(page)
             
-            # Wait for content to settle
-            await page.wait_for_timeout(5000)
+            print(f"Brain: Attempt {attempt} - Scraping {url}")
+            # For S3 browsers and heavy JS, we wait for networkidle
+            await page.goto(url, wait_until="networkidle", timeout=90000)
+            
+            # Extra wait for JS rendering (especially for S3 list population)
+            await page.wait_for_timeout(7000)
             
             content = await page.content()
             await browser.close()
@@ -84,7 +90,9 @@ async def run_scrape(url: str, attempt: int = 1):
             h.ignore_links = True
             h.ignore_images = True
             h.body_width = 0
-            return h.handle(str(soup))
+            markdown_text = h.handle(str(soup))
+            
+            return markdown_text
             
         except Exception as e:
             await browser.close()
@@ -93,27 +101,23 @@ async def run_scrape(url: str, attempt: int = 1):
 async def stealth_scrape(url: str):
     url = url.strip()
     
-    # 1. SMART DETECTION: Check if it's a PDF without Playwright first
-    # This prevents Playwright from crashing on binary streams (Stream Ended Unexpectedly)
-    try:
-        head_check = requests.head(url, headers=BROWSER_HEADERS, timeout=10, allow_redirects=True)
-        content_type = head_check.headers.get('content-type', '').lower()
-        
-        if 'application/pdf' in content_type or url.lower().split('?')[0].endswith('.pdf'):
-            return await extract_pdf_text(url)
-    except Exception as e:
-        print(f"Pre-check failed, continuing with Playwright: {str(e)}")
+    # 1. Quick PDF Check
+    if url.lower().split('?')[0].endswith('.pdf'):
+        return await extract_pdf_text(url)
 
-    # 2. IF NOT PDF, RUN STEALTH SCRAPER
+    # 2. Scrape with retries
     max_retries = 2
+    last_error = ""
     for i in range(max_retries):
         try:
             return await run_scrape(url, i + 1)
         except Exception as e:
-            print(f"Scrape attempt {i+1} failed: {str(e)}")
-            if i == max_retries - 1:
-                raise e
-            await asyncio.sleep(2)
+            last_error = str(e)
+            print(f"Scrape attempt {i+1} failed: {last_error}")
+            if i < max_retries - 1:
+                await asyncio.sleep(3)
+    
+    raise Exception(last_error)
 
 @app.get("/")
 async def health_check():
@@ -129,12 +133,12 @@ async def analyze_policy(request: PolicyRequest):
         text = await stealth_scrape(url)
     except Exception as e:
         print(f"Final Brain Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Intelligence failure: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Stealth Scrape failed: {str(e)}")
 
     if not text or len(text.strip()) < 100:
-        raise HTTPException(status_code=400, detail="The extracted policy text is too short to analyze accurately.")
+        raise HTTPException(status_code=400, detail="The extracted text is too short. The site might be blocking headless access or requires cookies.")
 
-    # 2. ANALYZE LONG POLICIES (CHUNKED)
+    # CHUNKED ANALYSIS
     chunks = [
         text[:3000], 
         text[len(text)//2 - 1500 : len(text)//2 + 1500], 
