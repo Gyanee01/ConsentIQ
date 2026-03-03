@@ -4,7 +4,7 @@
 
 Built for the **AMD Slingshot Hackathon**, ConsentIQ is a privacy-first analysis tool that scans AI application policies, identifies high-risk data practices using local NLP, and generates a visual risk report—completely cost-free and autonomous.
 
-![ConsentIQ Banner](./docs/assets/banner.png)
+![ConsentIQ Banner](images/label.png)
 
 ## 🚀 The Mission
 Students often use AI tools without knowing how their data is handled. ConsentIQ solves this by providing a "Traffic Light" risk system, allowing users to understand:
@@ -72,7 +72,7 @@ The app will be live at `http://localhost:3007`.
 ## 📸 Screenshots
 | Dashboard Intelligence | Data Nutrition Label |
 |:---:|:---:|
-| ![Stats](ConsentIQ/images/stats.png) | ![Label](ConsentIQ/images/label.png) |
+| ![Stats](images/stats.png) | ![Label](images/label.png) |
 
 ---
 **Hackathon**: AMD Slingshot Hackathon  
