@@ -72,7 +72,7 @@ The app will be live at `http://localhost:3007`.
 ## 📸 Screenshots
 | Dashboard Intelligence | Data Nutrition Label |
 |:---:|:---:|
-| ![Stats](./docs/assets/dashboard.png) | ![Label](./docs/assets/label.png) |
+| ![Stats](ConsentIQ/images/stats.png) | ![Label](ConsentIQ/images/label.png) |
 
 ---
 **Hackathon**: AMD Slingshot Hackathon  
