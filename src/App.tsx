@@ -74,8 +74,19 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: targetUrl }),
       });
+      const contentType = response.headers.get('content-type') || '';
+      const rawBody = await response.text();
+      let data: any = {};
 
-      const data = await response.json();
+      if (rawBody) {
+        if (contentType.includes('application/json')) {
+          data = JSON.parse(rawBody);
+        } else {
+          throw new Error(
+            `API returned non-JSON response (${response.status}). Check Vercel API route and NLP_SERVICE_URL.`
+          );
+        }
+      }
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to scan URL');
