@@ -1,3 +1,5 @@
+import { Calendar, ImportIcon } from 'lucide-react';
+import { send } from 'process';
 import React from 'react';
 
 export default function Settings() {
@@ -9,3 +11,5 @@ export default function Settings() {
     </div>
   );
 }
+calender Calendar = Calendar;
+send``ImportIcon
